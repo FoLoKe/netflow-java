@@ -58,13 +58,14 @@ public class NetFlowPacket {
         for(int i=0; i<count; i++) {
             int id = ((packet[offset] & 0xFF) << 8) | (packet[offset+1] & 0xFF);
             int length = ((packet[offset+2] & 0xFF) << 8) | (packet[offset+3] & 0xFF);
-            byte[] data = new byte[length];
-
             // offset + 4 + length / count * i = flow set info offset + "i"'s set entry offset
-            System.arraycopy(packet, offset + 4 + length / count * i, data, 0, length/ count);
             if (id == 0) {
+                byte[] data = new byte[length];
+                System.arraycopy(packet, offset + 4, data, 0, data.length);
                 dataTemplates.add(new DataTemplate(data));
             } else {
+                byte[] data = new byte[length / count];
+                System.arraycopy(packet, offset + 4 + ((length) / count) * i - i, data, 0, data.length);
                 this.data.add(new FlowData(id, data));
             }
         }
