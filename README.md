@@ -25,6 +25,6 @@ collector.join();
 <dependency>
     <groupId>com.github.FoLoKe</groupId>
     <artifactId>netflow-java</artifactId>
-    <version>9337a8c</version>
+    <version>COMMIT ID HERE</version>
 </dependency>
 ```
