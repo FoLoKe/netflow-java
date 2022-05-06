@@ -9,7 +9,8 @@ import java.util.function.Consumer;
 @FieldDefaults(makeFinal = true)
 public class NetFlowSession implements Consumer<NetFlowPacket> {
 
-    Map<Integer, NetFlowSource> sources = new HashMap<>();
+    // MAP : IP->SOURCES
+    Map<Integer, Map<Integer, NetFlowSource>> devices = new HashMap<>();
     Consumer<NetFlowSource> consumer;
 
     public NetFlowSession(Consumer<NetFlowSource> consumer) {
@@ -17,12 +18,17 @@ public class NetFlowSession implements Consumer<NetFlowPacket> {
     }
 
     public void accept(NetFlowPacket packet) {
-        NetFlowSource source = sources.get(packet.getSourceId());
+
+        Map<Integer, NetFlowSource> deviceSources = devices.computeIfAbsent(packet.getSourceAddress(), k -> new HashMap<>());
+
+        NetFlowSource source = deviceSources.get(packet.getSourceId());
+
         if(source == null) {
-            source = new NetFlowSource(packet.getSourceId());
-            sources.put(source.getId(), source);
+            source = new NetFlowSource(packet.getSourceAddress(), packet.getSourceId());
+            deviceSources.put(source.getId(), source);
             consumer.accept(source);
         }
+
         source.accept(packet);
     }
 

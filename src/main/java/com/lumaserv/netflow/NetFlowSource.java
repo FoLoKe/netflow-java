@@ -15,11 +15,14 @@ import java.util.function.Consumer;
 public class NetFlowSource implements Consumer<NetFlowPacket> {
 
     @Getter
-    int id;
+    final int id;
+    @Getter
+    final int deviceIP;
     Map<Integer, DataTemplate> templates = new HashMap<>();
     List<BiConsumer<Integer, Map<FlowField, FlowValue>>> listener = new ArrayList<>();
 
-    public NetFlowSource(int id) {
+    public NetFlowSource(int deviceIP, int id) {
+        this.deviceIP = deviceIP;
         this.id = id;
     }
 

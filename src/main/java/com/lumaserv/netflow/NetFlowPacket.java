@@ -5,22 +5,34 @@ import com.lumaserv.netflow.flowset.DataTemplate;
 import lombok.Getter;
 import lombok.experimental.FieldDefaults;
 
+import java.net.InetAddress;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
 @Getter
 @FieldDefaults(makeFinal = true)
 public class NetFlowPacket {
+    // The Source ID field is a 32-bit value that is used to guarantee uniqueness for all flows
+    // exported from a PARTICULAR device. (The Source ID field is the equivalent of the engine
+    // type and engine ID fields found in the NetFlow Version 5 and Version 8 headers).
+    // ~~~~
+    // Collector devices should use the combination of the SOURCE IP ADDRESS
+    // plus the Source ID field to associate an incoming NetFlow export packet
+    // with a unique instance of NetFlow on a particular device. - CISCO
+    int sourceAddress;
+    int sourceId;
 
     int version;
     long sysUptime;
     long timestamp;
     int flowSequence;
-    int sourceId;
     List<DataTemplate> dataTemplates = new ArrayList<>();
     List<FlowData> data = new ArrayList<>();
 
-    public NetFlowPacket(byte[] packet) {
+    public NetFlowPacket(InetAddress address, byte[] packet) {
+        this.sourceAddress = ByteBuffer.wrap(address.getAddress()).getInt();
+
         version = ((packet[0] & 0xFF) << 8) | (packet[1] & 0xFF);
         int count = ((packet[2] & 0xFF) << 8) | (packet[3] & 0xFF);
         sysUptime = ((packet[4] & 0xFFL) << 24) |
@@ -50,15 +62,11 @@ public class NetFlowPacket {
 
             // offset + 4 + length / count * i = flow set info offset + "i"'s set entry offset
             System.arraycopy(packet, offset + 4 + length / count * i, data, 0, length/ count);
-            switch (id) {
-                case 0:
-                    dataTemplates.add(new DataTemplate(data));
-                    break;
-                default:
-                    this.data.add(new FlowData(id, data));
-                    break;
+            if (id == 0) {
+                dataTemplates.add(new DataTemplate(data));
+            } else {
+                this.data.add(new FlowData(id, data));
             }
         }
     }
-
 }

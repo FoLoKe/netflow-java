@@ -31,7 +31,7 @@ public class NetFlowCollector implements Runnable {
         while (!worker.isInterrupted()) {
             try {
                 socket.receive(packet);
-                processor.accept(new NetFlowPacket(packet.getData()));
+                processor.accept(new NetFlowPacket(packet.getAddress(), packet.getData()));
             } catch (IOException ignored) {}
         }
     }

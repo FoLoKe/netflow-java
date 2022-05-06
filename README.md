@@ -1,5 +1,5 @@
 # netflow-java
-netflow v9 parser and collector library for Java
+Modified LUMASERV's netflow v9 parser and collector for "Cascade" project
 
 ## Usage
 ```java
@@ -14,15 +14,17 @@ collector.join();
 
 ## Maven
 ```xml
-<repository>
-    <id>lumaserv</id>
-    <url>https://maven.lumaserv.cloud</url>
-</repository>
+<repositories>
+    <repository>
+        <id>jitpack.io</id>
+        <url>https://jitpack.io</url>
+    </repository>
+</repositories>
 ```
 ```xml
 <dependency>
-    <groupId>com.lumaserv</groupId>
+    <groupId>com.github.FoLoKe</groupId>
     <artifactId>netflow-java</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>9337a8c</version>
 </dependency>
 ```
