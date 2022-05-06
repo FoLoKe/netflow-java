@@ -40,11 +40,16 @@ public class NetFlowPacket {
                 ((packet[18] & 0xFF) << 8) |
                 (packet[19] & 0xFF);
         int offset = 20;
+
+        // This is actually works wrong: Netflow v9 contains FlowSets with len and id(template) values, BUT, this function works only with first flow set
+        // and WAS copying first set entry over and over, loosing data about actual flows in set.
         for(int i=0; i<count; i++) {
             int id = ((packet[offset] & 0xFF) << 8) | (packet[offset+1] & 0xFF);
             int length = ((packet[offset+2] & 0xFF) << 8) | (packet[offset+3] & 0xFF);
             byte[] data = new byte[length];
-            System.arraycopy(packet, offset+4, data, 0, length);
+
+            // offset + 4 + length / count * i = flow set info offset + "i"'s set entry offset
+            System.arraycopy(packet, offset + 4 + length / count * i, data, 0, length/ count);
             switch (id) {
                 case 0:
                     dataTemplates.add(new DataTemplate(data));
