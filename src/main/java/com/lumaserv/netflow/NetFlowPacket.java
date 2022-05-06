@@ -65,7 +65,7 @@ public class NetFlowPacket {
                 dataTemplates.add(new DataTemplate(data));
             } else {
                 byte[] data = new byte[length / count];
-                System.arraycopy(packet, offset + 4 + ((length) / count) * i - i, data, 0, data.length);
+                System.arraycopy(packet, offset + 4 + ((length - 1) / count) * i, data, 0, data.length);
                 this.data.add(new FlowData(id, data));
             }
         }

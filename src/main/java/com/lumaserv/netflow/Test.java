@@ -19,6 +19,8 @@ public class Test {
                 System.out.println("Device: " + toAddress(byteBuffer.array()) + " source: " + source.getId());
 
                 source.listen((id, values) -> {
+                    System.out.println(values.get(FlowField.LAST_SWITCHED).asInt());
+                    System.out.println(values.get(FlowField.FIRST_SWITCHED).asInt());
                     System.out.println(sdf.format(Calendar.getInstance().getTime())
                             + " " + values.get(FlowField.L4_DST_PORT).asUShort()
                             + " " + toAddress(values.get(FlowField.IPV4_DST_ADDR).asBytes())
