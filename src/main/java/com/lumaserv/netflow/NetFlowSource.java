@@ -33,11 +33,11 @@ public class NetFlowSource implements Consumer<NetFlowPacket> {
 
     public void accept(NetFlowPacket packet) {
         packet.getDataTemplates().forEach(t -> templates.put(t.getTemplateId(), t));
-        packet.getData().forEach(d -> {
+        packet.getFlowSets().forEach(d -> {
             DataTemplate template = templates.get(d.getId());
             if(template != null) {
-                Map<FlowField, FlowValue> values = d.parse(template);
-                listener.forEach(l -> l.accept(d.getId(), values));
+                List<Map<FlowField, FlowValue>> data = d.parse(template);
+                data.forEach(fd -> listener.forEach(l -> l.accept(d.getId(), fd)));
             }
         });
     }

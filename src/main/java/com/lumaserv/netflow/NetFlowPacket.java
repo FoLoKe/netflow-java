@@ -1,11 +1,11 @@
 package com.lumaserv.netflow;
 
-import com.lumaserv.netflow.flowset.FlowData;
 import com.lumaserv.netflow.flowset.DataTemplate;
+import com.lumaserv.netflow.flowset.FlowSet;
 import lombok.Getter;
 import lombok.experimental.FieldDefaults;
 
-import java.net.InetAddress;
+import java.net.DatagramPacket;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,13 +28,13 @@ public class NetFlowPacket {
     long timestamp;
     int flowSequence;
     List<DataTemplate> dataTemplates = new ArrayList<>();
-    List<FlowData> data = new ArrayList<>();
+    List<FlowSet> flowSets = new ArrayList<>();
 
-    public NetFlowPacket(InetAddress address, byte[] packet) {
-        this.sourceAddress = ByteBuffer.wrap(address.getAddress()).getInt();
+    public NetFlowPacket(DatagramPacket datagram) {
+        this.sourceAddress = ByteBuffer.wrap(datagram.getAddress().getAddress()).getInt();
+        byte[] packet = datagram.getData(); // contains mix of flowSets and flowTemplates
 
         version = ((packet[0] & 0xFF) << 8) | (packet[1] & 0xFF);
-        int count = ((packet[2] & 0xFF) << 8) | (packet[3] & 0xFF);
         sysUptime = ((packet[4] & 0xFFL) << 24) |
                 ((packet[5] & 0xFFL) << 16) |
                 ((packet[6] & 0xFFL) << 8) |
@@ -53,20 +53,33 @@ public class NetFlowPacket {
                 (packet[19] & 0xFF);
         int offset = 20;
 
-        // This is actually works wrong: Netflow v9 contains FlowSets with len and id(template) values, BUT, this function works only with first flow set
-        // and WAS copying first set entry over and over, loosing data about actual flows in set.
-        for(int i=0; i<count; i++) {
-            int id = ((packet[offset] & 0xFF) << 8) | (packet[offset+1] & 0xFF);
-            int length = ((packet[offset+2] & 0xFF) << 8) | (packet[offset+3] & 0xFF);
-            // offset + 4 + length / count * i = flow set info offset + "i"'s set entry offset
+        // https://www.cisco.com/en/US/technologies/tk648/tk362/technologies_white_paper09186a00800a3db9.html
+        while(offset < datagram.getLength()) {
+            int id = ((packet[offset] & 0xFF) << 8) | (packet[offset+1] & 0xFF); // template id (0 for templates itself)
+            int flowSetLen = ((packet[offset+2] & 0xFF) << 8) | (packet[offset+3] & 0xFF); // warning: contains padding
+            offset += 4;
+            flowSetLen -= 4;
+
+            // trying to parse out flow sets
+            // idk 8 could contain flow set with 1 flow and 1 attribute everything less could be set's padding
+
             if (id == 0) {
-                byte[] data = new byte[length];
-                System.arraycopy(packet, offset + 4, data, 0, data.length);
-                dataTemplates.add(new DataTemplate(data));
+                while(flowSetLen >= 8) {
+                    byte[] flow = new byte[flowSetLen]; // contains templates set
+                    System.arraycopy(packet, offset, flow, 0, flowSetLen);
+
+                    DataTemplate template = new DataTemplate(flow);
+                    dataTemplates.add(template);
+                    offset += 4 + template.getFields().size() * 4;      // moving offset for the next template
+                    flowSetLen -= 4 + template.getFields().size() * 4; // 4 bytes for template info, other for fields
+                }
+                offset += flowSetLen; // set's padding
             } else {
-                byte[] data = new byte[length / count];
-                System.arraycopy(packet, offset + 4 + ((length - 1) / count) * i, data, 0, data.length);
-                this.data.add(new FlowData(id, data));
+                byte[] flowSetData = new byte[flowSetLen]; // contains flows set
+                System.arraycopy(packet, offset, flowSetData, 0, flowSetLen);
+                FlowSet flowSet = new FlowSet(flowSetData, id);
+                offset += flowSetLen;       // moving offset for the next set
+                flowSets.add(flowSet);
             }
         }
     }

@@ -1,5 +1,6 @@
 package com.lumaserv.netflow;
 
+import lombok.Getter;
 import lombok.experimental.FieldDefaults;
 
 import java.util.HashMap;
@@ -10,6 +11,7 @@ import java.util.function.Consumer;
 public class NetFlowSession implements Consumer<NetFlowPacket> {
 
     // MAP : IP->SOURCES
+    @Getter
     Map<Integer, Map<Integer, NetFlowSource>> devices = new HashMap<>();
     Consumer<NetFlowSource> consumer;
 
